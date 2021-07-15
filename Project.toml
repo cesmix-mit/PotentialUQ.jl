@@ -1,0 +1,16 @@
+name = "PotentialUQ"
+uuid = "82019520-10fa-4024-b4a5-9c1dfc9535f7"
+authors = ["fostdall <fostdall@mit.edu>"]
+version = "0.1.0"
+
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+GalacticOptim = "a75be94c-b780-496d-a8a9-0878b188d577"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TransformVariables = "84d833dd-6860-57f9-a1a7-6da5db126cff"
+Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
