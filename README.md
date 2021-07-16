@@ -19,6 +19,7 @@ Define A, b, β, and Q for b ∼ N(Aβ, Q)
     A = ...         (n x m Matrix)
     b = ...         (n x 1 Vector)
     beta = ...      (m x 1 Vector)
+    Q = ...         (n x n Covariance)
 ```
 
 Set up corresponding structures
