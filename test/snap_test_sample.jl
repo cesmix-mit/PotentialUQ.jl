@@ -1,24 +1,36 @@
+# include("../../Potentials.jl/src/Potentials.jl")
+# using .Potentials
 import PotentialUQ
-using LinearAlgebra: I
+using LinearAlgebra: I, diagm
+using Statistics: mean, std
 using Random
-using Turing
+println("Starting test of sampler")
 Random.seed!(1234);
 
-n = 100
+n = 10
 β = zeros(10)
 A = 1e-1*randn(n, 10)
 A[1:10, 1:10] += I(10)
 b = randn(n)
 
-Q = Matrix(1e-3*I(n))
+β = A\b
+σ = 1e-3 .* ones(n)
+logσ = log.(σ)
+snap = PotentialUQ.Potentials.SNAP(β, 0.9, 6, 1)
+dsnap = PotentialUQ.SNAPQDistribution(snap, A, b, logσ)
+# dsnap = PotentialUQ.SNAPDistribution(snap, A, b, diagm(σ))
+@time samp = PotentialUQ.Sample(dsnap; num_adapts = 100)
+println("Samples ", size(samp))
+println("Samples ", samp[1, :, 1])
+m = mean(samp[:, :, 1], dims = 1)
+s = std(samp[:, :, 1], dims = 1)
+println("Mean ", m, "\t")
+println("Std ", s)
+# show(stdout, "text/plain", dsnap.samples[1])
+# println(" ")
+println("Solution ", A\b)
+println("MAP Solution, Optimization β =  ") 
+show(stdout, "text/plain", m[1:10])
+println("MAP Solution, Optimization σ =  ") 
+show(stdout, "text/plain", exp.(m[11:end]))
 
-snap = PotentialUQ.SNAP(A, b, β)
-dsnap = PotentialUQ.SNAPDistribution(snap, Q)
-
-samples = PotentialUQ.sample(dsnap; num_samples = 1000)
-
-println("MAP Solution, Sampling ", dsnap.x.β)
-
-# summaries = describe(samples)
-# show(Base.stdout, "text/plain", summaries[1])
-# show(Base.stdout, "text/plain", summaries[2])

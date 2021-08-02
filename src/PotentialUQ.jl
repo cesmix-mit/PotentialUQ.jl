@@ -26,13 +26,18 @@
 module PotentialUQ
 
 using Base: NamedTuple
-using LinearAlgebra: tr, logdet, transpose, Symmetric, diag, I, pinv
+using LinearAlgebra: tr, logdet, transpose, Symmetric, diag, I, pinv, diagm, svd
 using Statistics: cov, std, mean
 using SciMLBase, GalacticOptim, Optim 
-using TransformVariables
-import Turing
-using Distributions
+using TransformVariables, Turing, Bijectors
+# using InteractiveUtils: @code_warntype
+# using DynamicHMC, LogDensityProblems
+# using AdvancedHMC, ForwardDiff
+using Distributions, UnPack
+using Random
 
+include("../../Potentials.jl/src/Potentials.jl")
+using .Potentials
 include("distribution_types.jl")
 include("distributions.jl")
 include("utils.jl")

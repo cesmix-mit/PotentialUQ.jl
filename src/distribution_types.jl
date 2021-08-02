@@ -4,64 +4,58 @@ using Base: AbstractFloat
 # This file will create the type structures for the UQ inference problems.
 # 
 #########################################################################################################
-abstract type Potential{T} end
 
-mutable struct SNAP{T<:Base.AbstractFloat} <: Potential{T}
-    A :: Matrix{T}
-    b :: Vector{T}
-    β :: Vector{T}
+abstract type ArbitraryDistribution end
+
+mutable struct PotentialDistribution <: ArbitraryDistribution
+    potential::Potentials.ArbitraryPotential          # potential defined in Potential.jl
+    prior :: ContinuousMultivariateDistribution
+    distribution::Function                   
+    x::NamedTuple
+    t::TransformVariables.AbstractTransform
+    samples::Vector
+    function PotentialDistribution(potential::Potentials.ArbitraryPotential, x::NamedTuple, prior::ContinuousMultivariateDistribution, likelihood::Function)
+        t = namedtp_to_vec(x)
+        new(potential, prior, likelihood, x, t, zeros(0))
+    end
 end
 
-abstract type ArbitraryDistribution{T} end
-
-mutable struct PotentialDistribution{T<:AbstractFloat} <: ArbitraryDistribution{T}
-    potential::Potential{T}       # potential defined in Potential.jl
-    x                             # Container of learnable parameters
-    p                             # Container of nonlearnable parameters  
-    distribution                  # -log likelihood   
+function (potential_dist::PotentialDistribution)(θ)
+    x = inverse(potential_dist.trans, θ)
+    potential_dist.distribution(x)
 end
-
-function PotentialDistribution(potential :: Potential{T}, distribution) where T<: AbstractFloat 
-    pd = PotentialDistribution(potential, p.x, p.q, distribution)
-    return pd
-end
-
 
 #########################################################################################################
-## SNAP 
+########################################### Prior ####################################################### 
+#########################################################################################################
 
-# Nonlearnable Q
-mutable struct SNAPDistribution{T<:AbstractFloat} <: ArbitraryDistribution{T}
-    snap::SNAP{T}               # SNAP potential, assume has A, b, β
-    x                        # Container of learnable parameters
-    p                        # Container of nonlearnable parameters
-    distribution             # -log likelihood
+########################################### SNAP  #######################################################
+struct SNAP_Prior_Distribution <: ContinuousMultivariateDistribution
+    A :: Array{Float64}
+    b :: Vector{Float64}
+    x :: Vector{Float64}
+    t :: TransformVariables.AbstractTransform
+    sampler :: Function 
+    logpdf :: Function 
+end
+function SNAP_Prior_Distribution(A::Array{Float64}, b::Vector{Float64}, v::NamedTuple)
+    t = namedtp_to_vec(v)
+    x = inverse(t, v)
+    sampler(rng::AbstractRNG, d::ContinuousMultivariateDistribution) = randn(length(d))
+    function logpdf(θ::Vector)
+        n = length(θ)
+        loglikelihood( MvNormal( zeros(n), I(n) ), θ )
+    end
+    SNAP_Prior_Distribution(A, b, x, t, sampler, logpdf)
+end         
+
+function Base.length(d::SNAP_Prior_Distribution) 
+    return length(d.x)
 end
 
-function SNAPDistribution(snap :: SNAP{T}, Q) where T<: AbstractFloat
-    x = (β = snap.β, )
-    p = (A = snap.A, b = snap.b, Q = Q)
-    
-    distribution(x, p) = 0.5*tr( transpose(p.A*x.β-p.b)*(p.Q\(p.A*x.β-p.b)) + logdet(p.Q))
-    pd = SNAPDistribution{T}(snap, x, p, distribution)
-    return pd
-end
-
-# Learnable Q 
-mutable struct SNAPQDistribution{T<:AbstractFloat} <: ArbitraryDistribution{T}
-    snap::SNAP{T}               # SNAP potential, assume has A, b, β
-    x                           # Container of learnable parameters
-    p                           # Container of nonlearnable parameters
-    distribution                # SNAP likelihood(p)
-end
-
-function SNAPQDistribution(snap :: SNAP{T}, Q) where T<: AbstractFloat
-    x = (β = snap.β, Q = Q)
-    p = (A = snap.A, b = snap.b)
-    distribution(x, p) = 0.5*tr( transpose(p.A*x.β-p.b)*(x.Q\(p.A*x.β-p.b)) + logdet(x.Q))
-    pd = SNAPQDistribution{T}(snap, x, p, distribution)
-    return pd
-end
+Distributions.rand(rng::AbstractRNG, d::SNAP_Prior_Distribution) = d.sampler(rng, d)
+Distributions.logpdf(d::SNAP_Prior_Distribution, x::Vector) = d.logpdf(x)
+Bijectors.bijector(d::SNAP_Prior_Distribution) = Bijectors.Identity{1}()
 
 
 
