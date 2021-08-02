@@ -1,4 +1,4 @@
-# PotentialUQ.jl
+# [WIP] PotentialUQ.jl
 Perform UQ for learned potentials
 
 ## Roadmap
@@ -24,13 +24,15 @@ Define A, b, β, and Q for b ∼ N(Aβ, Q)
 
 Set up corresponding structures
 ```julia
-snap = SNAP(A, b, β)
-dsnap = SNAPDistribution(snap, Q)
+sampler(rng::Random.AbstractRNG, d::ContinuousMultivariateDistribution) = ...
+snap_prior = PotentialUQ.SNAP_Prior_Distribution(...)
+snap_likelihood(x::Vector) = ...
+dsnap = PotentialUQ.PotentialDistribution(snap, named_tuple, snap_prior, snap_likelihood)
 ```
 
 Produces samples using **Turing.jl**
 ```julia
-samples = sample(dsnap; num_samples = 1000)
+samp = PotentialUQ.Sample(dsnap)
 ```
 
 MAP estimate is placed in data structure
