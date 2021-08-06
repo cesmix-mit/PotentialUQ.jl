@@ -6,7 +6,7 @@ using TransformVariables
 using Random
 using Turing
 
-num_configs = 10
+num_configs = 40
 r = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs)
 file_path = "../examples/GaN/DATA"
 for j = 1:num_configs
@@ -15,11 +15,11 @@ for j = 1:num_configs
     r[j] = c
 end
 
-num_configs = 10
-rtest = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs)
+num_configs_test = 20
+rtest = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs_test)
 file_path = "../examples/GaN/DATA"
-for j = 1:num_configs
-    c = PotentialUQ.Potentials.Configuration(file_path * "/" * string(10+j) * "/DATA"; atom_names = [:Ga, :N], 
+for j = 1:num_configs_test
+    c = PotentialUQ.Potentials.Configuration(file_path * "/" * string(40+j) * "/DATA"; atom_names = [:Ga, :N], 
                     rcutoff = 0.5, neighbor_weight = [1.0, 0.5])
     rtest[j] = c
 end
@@ -70,7 +70,7 @@ twojmax = 3
 snap = PotentialUQ.Potentials.SNAP(rcutoff, twojmax, r[1].num_atom_types)
 A = PotentialUQ.Potentials.get_snap(r, snap)
 println("Shape of A: ", size(A))
-show(stdout, "text/plain", A[1:20, 1:10])
+show(stdout, "text/plain", A[1:20, 1:9])
 println(" ")
 
 # Fit
@@ -81,10 +81,10 @@ println(" ")
 # Test 
 pe_snap = PotentialUQ.Potentials.potential_energy(rtest, snap)
 println("SNAP potential_energy = ", pe_snap)
-println("Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(pe)))
+println("Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(ptest)))
 v_snap = PotentialUQ.Potentials.virial(rtest, snap)
 println("SNAP Virial = ", v_snap)
-println("Virial Error = ", mean(abs.(vtest - v_snap)./abs.(v)))
+println("Virial Error = ", mean(abs.(vtest - v_snap)./abs.(vtest)))
 
 # Regularize 
 println("Regularizing")
@@ -96,10 +96,10 @@ show(stdout, "text/plain", snap.β)
 println(" ")
 pe_snap = PotentialUQ.Potentials.potential_energy(rtest, snap)
 println("Regularized SNAP potential_energy = ", pe_snap)
-println("Regularized Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(pe)))
+println("Regularized Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(ptest)))
 v_snap = PotentialUQ.Potentials.virial(rtest, snap)
 println("Regularized SNAP Virial = ", v_snap)
-println("Regularized Virial Error = ", mean(abs.(vtest - v_snap)./abs.(v)))
+println("Regularized Virial Error = ", mean(abs.(vtest - v_snap)./abs.(vtest)))
 
 
 ############### UQ ######################
@@ -141,10 +141,10 @@ show(stdout, "text/plain", snap.β)
 println(" ")
 pe_snap = PotentialUQ.Potentials.potential_energy(rtest, snap)
 println("MAP SNAP potential_energy = ", pe_snap)
-println("MAP Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(pe)))
+println("MAP Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(ptest)))
 v_snap = PotentialUQ.Potentials.virial(rtest, snap)
 println("MAP SNAP Virial = ", v_snap)
-println("MAP Virial Error = ", mean(abs.(vtest - v_snap)./abs.(v)))
+println("MAP Virial Error = ", mean(abs.(vtest - v_snap)./abs.(vtest)))
 
 # using Plots 
 
