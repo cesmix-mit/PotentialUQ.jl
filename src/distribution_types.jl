@@ -29,6 +29,22 @@ end
 ########################################### Prior ####################################################### 
 #########################################################################################################
 
+########################################### LJ #######################################################
+struct LJ_Prior_Distribution <: ContinuousMultivariateDistribution
+    y_train :: Vector{Potentials.Configuration}
+    x       :: Vector{Float64}
+    t       :: TransformVariables.AbstractTransform
+    sampler :: Function 
+    logpdf  :: Function
+end
+function Base.length(d::LJ_Prior_Distribution)
+    return length(d.x)
+end
+
+Distributions.rand(rng::AbstractRNG, d::LJ_Prior_Distribution) = d.sampler(rng, d)
+Distributions.logpdf(d::LJ_Prior_Distribution, x::Vector) = d.logpdf(x)
+Bijectors.bijector(d::LJ_Prior_Distribution) = Bijectors.Logit{1}(0.5, 1.5)
+
 ########################################### SNAP  #######################################################
 struct SNAP_Prior_Distribution <: ContinuousMultivariateDistribution
     A :: Array{Float64}

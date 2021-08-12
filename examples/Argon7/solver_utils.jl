@@ -178,29 +178,45 @@ function verlet(p::Potentials.ArbitraryPotential, c::Potentials.Configuration, d
     pos = vec(c.Positions)
     vels = vec(c.Velocities)
     R = sqrt(2*Temp*k_b*dt*γ)
-    a = Potentials.force(c.Positions, p) - γ .* vels
+    a = Potentials.force(c, p)    
+    a = a - γ .* vels
+    noise = 0.5*R*randn(c.num_atoms, 3)
+    if pos[1][3] == 0.0
+        for j = 1:length(a)
+            a[j][3] = 0.0
+            noise[j, 3] = 0.0
+        end
+    end
     v_star = update_velo(vels, a, 0.0*a, dt)
-    noise = 0.5*R*randn(c.num_atoms, 3)
-    if pos[1][3] == 0.0
-        noise[:, 3] .= 0.0
-    end
     noise = noise .- mean( noise, dims = 1 )
     noise = [[noise[i, j] for j = 1:3] for i = 1:c.num_atoms]
-
-
     v_star += 0.5*noise
+    # Second half-time step
     x_new = c.Positions + v_star*dt
-    a_new = Potentials.force(x_new, p) - γ .* v_star 
-    v_new = update_velo(v_star, a, a_new, dt)
-
+    # println("Old Positions ")
+    # show(stdout, "text/plain", c.Positions)
+    # println(" ")
+    # println("New positions ")
+    # show(stdout, "text/plain", x_new)
+    # println(" ")
+    for (i, xi) in enumerate(x_new)       
+        c.Positions[i] = xi
+    end
+    a_new = Potentials.force(c, p)
+    a_new = a_new - γ .* vels
     noise = 0.5*R*randn(c.num_atoms, 3)
     if pos[1][3] == 0.0
-        noise[:, 3] .= 0.0
+        for j = 1:length(a)
+            a_new[j][3] = 0.0
+            noise[j, 3] = 0.0
+        end
     end
     noise = noise .- mean( noise, dims = 1 )
     noise = [[noise[i, j] for j = 1:3] for i = 1:c.num_atoms]
-
+    v_new = update_velo(v_star, a, a_new, dt)
     v_new += 0.5*noise
+
+    # Save
     for (i, (xi, vi)) in enumerate(zip(x_new, v_new))
         c.Positions[i] = xi
         c.Velocities[i] = Potentials.Position(vi[1], vi[2], vi[3], c.Positions[i].type)
@@ -220,6 +236,7 @@ function solve(p::Potentials.ArbitraryPotential, c0::Potentials.Configuration, d
     c_temp = deepcopy(c0)
     for j = 2:(Nt)
         τ +=  dt
+        # println("Time ", τ)
         c_temp = verlet(p, c_temp, dt, Temp[j-1])
         if (j-1) % save_dt == 0
             count += 1
@@ -306,16 +323,11 @@ function calculate_mass_diffusivity(r::Vector{Potentials.Configuration}, t)
     return D
 end
 
-function animate_atoms(r::Vector{Potentials.Configuration}, t; fps = 60, dT = 20, title = "lennard_jones_cluster.gif")
+function animate_atoms(r::Vector{Potentials.Configuration}, t; dim = 2, fps = 60, dT = 20, title = "lennard_jones_cluster.gif")
     n = length(r)
     num_atoms = r[1].num_atoms
-    if r[1].Positions[1].z == 0
-        d = 2
-    else 
-        d = 3
-    end
-
-    if d == 3
+    
+    if dim == 3
         
         anim = @animate for i = 1:dT:n
             pos = hcat(vec(r[i].Positions)...)
@@ -325,11 +337,10 @@ function animate_atoms(r::Vector{Potentials.Configuration}, t; fps = 60, dT = 20
                             markersize = 20, 
                             c=colormap("Blues",num_atoms), 
                             legend = false,
-                            camera = (cam_angle , 45),
                             title = string("τ = ", floor(t[i]) ))
         end
     
-    elseif d==2
+    elseif dim==2
         anim = @animate for i = 1:dT:n
             pos = hcat(vec(r[i].Positions)...)
             scatter(pos[1, :], pos[2, :], xaxis = ("x", (-4, 4), -4:0.5:4), 

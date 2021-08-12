@@ -1,5 +1,5 @@
 import PotentialUQ
-using LinearAlgebra: svd, svdvals, cond, pinv, I, diagm
+using LinearAlgebra: svd, svdvals, cond, pinv, I, diagm, norm
 using Statistics
 using Distributions
 using TransformVariables
@@ -11,7 +11,7 @@ r = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs)
 file_path = "../examples/GaN/DATA"
 for j = 1:num_configs
     c = PotentialUQ.Potentials.Configuration(file_path * "/" * string(j) * "/DATA"; atom_names = [:Ga, :N], 
-                    rcutoff = 0.5, neighbor_weight = [1.0, 0.5])
+                    rcutoff = [3.5], neighbor_weight = [1.0, 0.5])
     r[j] = c
 end
 
@@ -20,7 +20,7 @@ rtest = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs_test)
 file_path = "../examples/GaN/DATA"
 for j = 1:num_configs_test
     c = PotentialUQ.Potentials.Configuration(file_path * "/" * string(40+j) * "/DATA"; atom_names = [:Ga, :N], 
-                    rcutoff = 0.5, neighbor_weight = [1.0, 0.5])
+                    rcutoff = [3.5], neighbor_weight = [1.0, 0.5])
     rtest[j] = c
 end
 
@@ -47,6 +47,7 @@ pe = PotentialUQ.Potentials.potential_energy(r, gan)
 ptest = PotentialUQ.Potentials.potential_energy(rtest, gantest)
 println("GaN Energy ", pe)
 fo = PotentialUQ.Potentials.force(r, gan)
+fotest = PotentialUQ.Potentials.force(rtest, gantest)
 println("GaN Forces ")
 show(stdout, "text/plain", fo[1][1:3])
 println(" ")
@@ -65,9 +66,8 @@ show(stdout, "text/plain", b[1:10])
 println(" ")
 
 # Form SNAP A matrix
-rcutoff = 3.5
-twojmax = 3
-snap = PotentialUQ.Potentials.SNAP(rcutoff, twojmax, r[1].num_atom_types)
+twojmax = 6
+snap = PotentialUQ.Potentials.SNAP(twojmax, r[1].num_atom_types)
 A = PotentialUQ.Potentials.get_snap(r, snap)
 println("Shape of A: ", size(A))
 show(stdout, "text/plain", A[1:20, 1:9])
@@ -82,6 +82,14 @@ println(" ")
 pe_snap = PotentialUQ.Potentials.potential_energy(rtest, snap)
 println("SNAP potential_energy = ", pe_snap)
 println("Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(ptest)))
+f_snap = PotentialUQ.Potentials.force(rtest, snap)
+show(stdout, "text/plain", vcat(fotest...)[1:5])
+println(" ")
+show(stdout, "text/plain", vcat(f_snap...)[1:5])
+println(" ")
+ff = vcat( (fotest - f_snap)... ) 
+fff = vcat( fotest... )
+println("Force Relative Error = ", mean( norm.(ff)./norm.(fff)  ) )
 v_snap = PotentialUQ.Potentials.virial(rtest, snap)
 println("SNAP Virial = ", v_snap)
 println("Virial Error = ", mean(abs.(vtest - v_snap)./abs.(vtest)))
@@ -97,6 +105,10 @@ println(" ")
 pe_snap = PotentialUQ.Potentials.potential_energy(rtest, snap)
 println("Regularized SNAP potential_energy = ", pe_snap)
 println("Regularized Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(ptest)))
+f_snap = PotentialUQ.Potentials.force(rtest, snap)
+ff = vcat( (fotest - f_snap)... ) 
+fff = vcat( fotest... )
+println("Force Relative Error = ", mean( norm.(ff)./norm.(fff)  ) )
 v_snap = PotentialUQ.Potentials.virial(rtest, snap)
 println("Regularized SNAP Virial = ", v_snap)
 println("Regularized Virial Error = ", mean(abs.(vtest - v_snap)./abs.(vtest)))
@@ -115,7 +127,7 @@ x = TransformVariables.inverse(t, nt)
 # # Prior
 F = svd(A)
 Σ = diagm(F.S)
-scale_A = vec(std(A, dims = 2))
+scale_A = vcat(200.0 .+ 0.0 .* pe, 1.0 .+ 0.0 .*reduce(vcat, reduce(vcat,fo)), 1.0 .+ 0.0 .*reduce(vcat, v_tensor))
 Q =  F.U' * ( diagm(scale_A) ) * (F.U)
 Q = 1e-2*I(m) + 0.5*Q + 0.5*Q'
 println("Q = ")
@@ -142,6 +154,10 @@ println(" ")
 pe_snap = PotentialUQ.Potentials.potential_energy(rtest, snap)
 println("MAP SNAP potential_energy = ", pe_snap)
 println("MAP Relative Error = ", mean(abs.(ptest - pe_snap)./abs.(ptest)))
+f_snap = PotentialUQ.Potentials.force(rtest, snap)
+ff = vcat( (fotest - f_snap)... ) 
+fff = vcat( fotest... )
+println("Force Relative Error = ", mean( norm.(ff)./norm.(fff)  ) )
 v_snap = PotentialUQ.Potentials.virial(rtest, snap)
 println("MAP SNAP Virial = ", v_snap)
 println("MAP Virial Error = ", mean(abs.(vtest - v_snap)./abs.(vtest)))
