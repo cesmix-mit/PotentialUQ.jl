@@ -26,5 +26,5 @@ Manifest.toml
 
 examples/Argon7/DATA_md/
 examples/Argon7/DATA_training/
-examples/lj_estimation/TEMP_25/
+examples/Argon7/lj_estimation/TEMP_25/
 examples/temp/
