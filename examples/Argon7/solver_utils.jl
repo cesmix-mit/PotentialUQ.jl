@@ -248,13 +248,13 @@ function solve(p::Potentials.ArbitraryPotential, c0::Potentials.Configuration, d
     return r, t
 end
 
-function get_positions(r::Vector{Potentials.Configuration})
+function get_positions(r::Vector{PotentialUQ.Potentials.Configuration})
     N = length(r)
     num_atoms = r[1].num_atoms
 
     pos = Vector{Vector{Float64}}(undef, N)
     for (i, ri) in enumerate(r)
-        pos[i] = Potentials.norm.(ri.Positions)
+        pos[i] = PotentialUQ.Potentials.norm.(ri.Positions)
     end
     return pos 
 end

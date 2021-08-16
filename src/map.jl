@@ -5,22 +5,24 @@
 #       For the conversion, we use TransformVariables.
 #########################################################################################################
 
-function MAP(pdist :: ArbitraryDistribution) 
+function MAP(pdist :: ArbitraryDistribution; solver = LBFGS(), verbose = false) 
 
-    # Setup optimization utilities
-    x0 = inverse(pdist.trans, pdist.x)
-    f(x, params = nothing) = -pdist.distribution(x)
-    # Define problem
-    g = OptimizationFunction(f, GalacticOptim.AutoForwardDiff())
-    prob = OptimizationProblem(g, x0)
+    # Define a Hamiltonian system
+    x0 = inverse(pdist.t, pdist.x)
+    n = length(x0)
+    @model function demo()
+        x ~ pdist.prior
+        Turing.@addlogprob! pdist.distribution(x)
+    end    
 
-    # Solve
-    sol = solve(prob, BFGS())
+    model = demo()
+    map_estimate = optimize(model, Turing.MAP(), x0, solver)
+    pdist.x = transform(pdist.t, map_estimate.values.array)
+    if verbose
+        println("Map Estimate ")
+        show(stdout, "text/plain", map_estimate)
+    end
 
-    # return solution
-    xf = sol.u 
-    pdist.x = transform(pdist.trans, xf)
-    Potentials.set_trainable_params!(pdist.snap, pdist.x)
     return pdist
 
 end

@@ -16,13 +16,14 @@ mutable struct PotentialDistribution <: ArbitraryDistribution
     samples::Vector
     function PotentialDistribution(potential::Potentials.ArbitraryPotential, x::NamedTuple, prior::ContinuousMultivariateDistribution, likelihood::Function)
         t = namedtp_to_vec(x)
-        new(potential, prior, likelihood, x, t, zeros(0))
+        distribution(x) = likelihood(x) + prior.logpdf(x)
+        new(potential, prior, distribution, x, t, zeros(0))
     end
 end
 
 function (potential_dist::PotentialDistribution)(θ)
-    x = inverse(potential_dist.trans, θ)
-    potential_dist.distribution(x)
+    x = inverse(potential_dist.t, θ)
+    potential_dist.distribution(x) + potential_dist.prior.logpdf(x)
 end
 
 #########################################################################################################
@@ -47,14 +48,14 @@ Bijectors.bijector(d::LJ_Prior_Distribution) = Bijectors.Logit{1}(0.5, 1.5)
 
 ########################################### SNAP  #######################################################
 struct SNAP_Prior_Distribution <: ContinuousMultivariateDistribution
-    A :: Array{Float64}
-    b :: Vector{Float64}
-    x :: Vector{Float64}
+    A :: Array
+    b :: Vector
+    x :: Vector
     t :: TransformVariables.AbstractTransform
     sampler :: Function 
     logpdf :: Function 
 end
-function SNAP_Prior_Distribution(A::Array{Float64}, b::Vector{Float64}, v::NamedTuple)
+function SNAP_Prior_Distribution(A::Array, b::Vector, v::NamedTuple)
     t = namedtp_to_vec(v)
     x = inverse(t, v)
     sampler(rng::AbstractRNG, d::ContinuousMultivariateDistribution) = randn(length(d))

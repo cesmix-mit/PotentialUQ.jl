@@ -24,7 +24,6 @@ docs/site/
 # environment.
 Manifest.toml
 
-examples/Argon7/DATA_md/
-examples/Argon7/DATA_training/
-examples/lj_estimation/TEMP_25/
-examples/temp/
+examples/Argon7/
+examples/Argon13/
+examples/Argon38/
