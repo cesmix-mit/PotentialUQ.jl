@@ -22,19 +22,19 @@ function Sample(pdist :: ArbitraryDistribution; num_chains = 1, estimate_map = f
 
     # # Start sampling.
     if num_chains == 1
-        chain = Turing.sample(model, NUTS(num_adapts, 0.7), num_samples, init_theta = x0)
+        chain = Turing.sample(model, NUTS(num_adapts, 0.5; max_depth = 15), num_samples, init_theta = x0)
         samples = copy(group(chain, "x").value.data[:,:,1])
-        samples = [samples[i, :] for i = 1:size(samples, 1)]
     else
-        chain = Turing.sample(model, NUTS(num_adapts, 0.7), MCMCThreads(),  num_samples, num_chains, init_theta = x0.*(1+0.1*randn()) )
+        chain = Turing.sample(model, NUTS(num_adapts, 0.5, 15), MCMCThreads(),  num_samples, num_chains, init_theta = x0.*(1+0.1*randn()) )
         samples = copy( reshape(group(chain, "x").value.data, num_samples*num_chains, n) )
     end
+    samples = [samples[i, :] for i = 1:size(samples, 1)]
     if verbose 
         show(stdout, "text/plain", chain) 
         println(" ")
     end
     
-
+    # Extract Samples
     pdist.samples = transform.(pdist.t, samples) 
     values = pdist.distribution.(samples)
     map = samples[argmax( values )]

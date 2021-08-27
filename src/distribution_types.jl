@@ -71,7 +71,10 @@ function Base.length(d::SNAP_Prior_Distribution)
 end
 
 Distributions.rand(rng::AbstractRNG, d::SNAP_Prior_Distribution) = d.sampler(rng, d)
-Distributions.logpdf(d::SNAP_Prior_Distribution, x::Vector) = d.logpdf(x)
+function Distributions._rand!(rng::AbstractRNG, d::SNAP_Prior_Distribution, x::AbstractVector) 
+    x = d.sampler(rng, d)
+end
+Distributions._logpdf(d::SNAP_Prior_Distribution, x::AbstractArray) = d.logpdf(x)
 Bijectors.bijector(d::SNAP_Prior_Distribution) = Bijectors.Identity{1}()
 
 

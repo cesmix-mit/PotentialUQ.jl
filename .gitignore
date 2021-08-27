@@ -27,3 +27,8 @@ Manifest.toml
 examples/Argon7/
 examples/Argon13/
 examples/Argon38/
+energy_matrix.txt
+energy_matrix_num_configs_200.txt
+force_matrix.txt
+force_matrix_num_configs_200.txt
+log.lammps
