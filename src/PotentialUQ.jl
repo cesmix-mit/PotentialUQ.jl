@@ -35,9 +35,7 @@ using TransformVariables, Turing, Bijectors
 # using AdvancedHMC, ForwardDiff
 using Distributions, UnPack
 using Random
-
-include("../../Potentials.jl/src/Potentials.jl")
-using .Potentials
+import InteratomicPotentials as Potentials
 include("distribution_types.jl")
 include("distributions.jl")
 include("utils.jl")

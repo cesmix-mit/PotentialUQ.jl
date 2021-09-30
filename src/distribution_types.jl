@@ -30,24 +30,34 @@ end
 ########################################### Prior ####################################################### 
 #########################################################################################################
 
+# Define an ArbitraryPrior type 
+abstract type ArbitraryPrior <: ContinuousMultivariateDistribution end
+
+function Base.length(d::ArbitraryPrior) 
+    return length(d.x)
+end
+
+Distributions.rand(rng::AbstractRNG, d::ArbitraryPrior) = d.sampler(rng, d)
+function Distributions._rand!(rng::AbstractRNG, d::ArbitraryPrior, x::AbstractVector) 
+    x = d.sampler(rng, d)
+end
+
+Distributions._logpdf(d::ArbitraryPrior, x::AbstractArray) = d.logpdf(x)
+Bijectors.bijector(d::ArbitraryPrior) = Bijectors.Identity{1}()
+
 ########################################### LJ #######################################################
-struct LJ_Prior_Distribution <: ContinuousMultivariateDistribution
+struct LJ_Prior_Distribution <: ArbitraryPrior
     y_train :: Vector{Potentials.Configuration}
     x       :: Vector{Float64}
     t       :: TransformVariables.AbstractTransform
     sampler :: Function 
     logpdf  :: Function
 end
-function Base.length(d::LJ_Prior_Distribution)
-    return length(d.x)
-end
 
-Distributions.rand(rng::AbstractRNG, d::LJ_Prior_Distribution) = d.sampler(rng, d)
-Distributions.logpdf(d::LJ_Prior_Distribution, x::Vector) = d.logpdf(x)
 Bijectors.bijector(d::LJ_Prior_Distribution) = Bijectors.Logit{1}(0.5, 1.5)
 
 ########################################### SNAP  #######################################################
-struct SNAP_Prior_Distribution <: ContinuousMultivariateDistribution
+struct SNAP_Prior_Distribution <: ArbitraryPrior
     A :: Array
     b :: Vector
     x :: Vector
@@ -58,24 +68,17 @@ end
 function SNAP_Prior_Distribution(A::Array, b::Vector, v::NamedTuple)
     t = namedtp_to_vec(v)
     x = inverse(t, v)
-    sampler(rng::AbstractRNG, d::ContinuousMultivariateDistribution) = randn(length(d))
+    sampler(rng::AbstractRNG, d::ArbitraryPrior) = randn(length(d))
     function logpdf(θ::Vector)
         n = length(θ)
         loglikelihood( MvNormal( zeros(n), I(n) ), θ )
     end
     SNAP_Prior_Distribution(A, b, x, t, sampler, logpdf)
-end         
-
-function Base.length(d::SNAP_Prior_Distribution) 
-    return length(d.x)
 end
 
-Distributions.rand(rng::AbstractRNG, d::SNAP_Prior_Distribution) = d.sampler(rng, d)
-function Distributions._rand!(rng::AbstractRNG, d::SNAP_Prior_Distribution, x::AbstractVector) 
-    x = d.sampler(rng, d)
-end
-Distributions._logpdf(d::SNAP_Prior_Distribution, x::AbstractArray) = d.logpdf(x)
-Bijectors.bijector(d::SNAP_Prior_Distribution) = Bijectors.Identity{1}()
+#####################################################################################################
+
+
 
 
 

@@ -10,8 +10,8 @@ num_configs = 40
 r = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs)
 file_path = "../examples/GaN/DATA"
 for j = 1:num_configs
-    c = PotentialUQ.Potentials.Configuration(file_path * "/" * string(j) * "/DATA"; atom_names = [:Ga, :N], 
-                    rcutoff = [3.5], neighbor_weight = [1.0, 0.5])
+    c = PotentialUQ.Potentials.load_lammps(file_path * "/" * string(j) * "/DATA"; atom_names = [:Ga, :N], 
+                    radii = [0.5, 0.5], weights = [1.0, 0.5], boundary_type = ["p", "p", "p"], units = "metal")
     r[j] = c
 end
 
@@ -19,8 +19,8 @@ num_configs_test = 20
 rtest = Vector{PotentialUQ.Potentials.Configuration}(undef, num_configs_test)
 file_path = "../examples/GaN/DATA"
 for j = 1:num_configs_test
-    c = PotentialUQ.Potentials.Configuration(file_path * "/" * string(40+j) * "/DATA"; atom_names = [:Ga, :N], 
-                    rcutoff = [3.5], neighbor_weight = [1.0, 0.5])
+    c = PotentialUQ.Potentials.load_lammps(file_path * "/" * string(40+j) * "/DATA"; atom_names = [:Ga, :N], 
+            radii = [0.5, 0.5], weights = [1.0, 0.5], boundary_type = ["p", "p", "p"], units = "metal")
     rtest[j] = c
 end
 
@@ -67,7 +67,8 @@ println(" ")
 
 # Form SNAP A matrix
 twojmax = 6
-snap = PotentialUQ.Potentials.SNAP(twojmax, r[1].num_atom_types)
+rcutfac = 4.0
+snap = PotentialUQ.Potentials.SNAP(rcutfac, twojmax, r[1])
 A = PotentialUQ.Potentials.get_snap(r, snap)
 println("Shape of A: ", size(A))
 show(stdout, "text/plain", A[1:20, 1:9])
