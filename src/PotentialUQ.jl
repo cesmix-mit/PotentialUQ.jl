@@ -26,21 +26,21 @@
 module PotentialUQ
 
 using Base: NamedTuple
-using LinearAlgebra: tr, logdet, transpose, Symmetric, diag, I, pinv, diagm, svd
+using LinearAlgebra: tr, logdet, transpose, Symmetric, diag, I, pinv, diagm, svd, dot
 using Statistics: cov, std, mean
-using SciMLBase, GalacticOptim, Optim 
-using TransformVariables, Turing, Bijectors
-# using InteractiveUtils: @code_warntype
-# using DynamicHMC, LogDensityProblems
-# using AdvancedHMC, ForwardDiff
-using Distributions, UnPack
+using TransformVariables, Bijectors
+using Distributions
 using Random
 import InteratomicPotentials as Potentials
-include("distribution_types.jl")
-include("distributions.jl")
-include("utils.jl")
-include("map.jl")
-include("sampling.jl")
+
+
+include("types/types.jl")
+include("samplers/samplers.jl")
+include("utilities/utils.jl")
+# include("optimizers/map.jl")
+
+export state, chain, chain_diagnostics, mcmc_step, mcmc, hmc_step, hmc, Sample
+
 end
 
 
